@@ -48,7 +48,7 @@ class FilesController {
       name,
       type,
       isPublic,
-      parentId: parentId === 0 ? 0 : ObjectId(parentId),
+      parentId: parentId === 0 ? '0' : ObjectId(parentId),
     };
 
     if (type === 'folder') {
@@ -122,9 +122,16 @@ class FilesController {
     const page = parseInt(req.query.page, 10) || 0;
     const pageSize = 20;
 
+    let matchStage;
+    if (parentId === '0') {
+      matchStage = { $or: [{ parentId: '0' }, { parentId: 0 }] };
+    } else {
+      matchStage = { parentId: ObjectId(parentId) };
+    }
+
     const pipeline = [
       { $match: { userId: ObjectId(userId) } },
-      { $match: { parentId: parentId === '0' ? 0 : ObjectId(parentId) } },
+      { $match: matchStage },
       { $skip: page * pageSize },
       { $limit: pageSize },
     ];
