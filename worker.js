@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import dbClient from './utils/db';
 
 const fileQueue = new Bull('fileQueue');
+const userQueue = new Bull('userQueue');
 
 const generateThumbnail = async (path, width) => {
   const thumbnailPath = `${path}_${width}`;
@@ -35,4 +36,20 @@ fileQueue.process(async (job) => {
   const thumbnailPromises = sizes.map((size) => generateThumbnail(file.localPath, size));
 
   await Promise.all(thumbnailPromises);
+});
+
+userQueue.process(async (job) => {
+  const { userId } = job.data;
+
+  if (!userId) {
+    throw new Error('Missing userId');
+  }
+
+  const user = await dbClient.db.collection('users').findOne({ _id: new ObjectId(userId) });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  console.log(`Welcome ${user.email}!`);
 });
